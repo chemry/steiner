@@ -11,7 +11,7 @@ typedef struct edgee
 
 	int v1, v2;	// the two vertex connected by the edge
 	int w;		// weight
-	int choose;	// 1 -- included in solution;	0 -- not included in solution
+	int choose;	// 1 -- included in solution;	0 -- not included in solution； -1 temporarly deleted from the graph
 	struct neighborr* e1;
 	struct neighborr* e2; // pointer to the specify edge of the two adjacency list of the two neighbor;
 } edge;
@@ -121,12 +121,12 @@ void add(graph *g, int eIndex, int vertex1, int vertex2, int weight){
 
 int deleteNode(graph * g, int n){ // return the remaining connecting node
 	neighbor* ngh = g -> nodeList[n].nghList;
-
+	g -> nodeList[n].nghList -> e -> choose = -1;
+	g -> nodeList[n].choose = -1;
 	edge* e = ngh -> e;
-	printf("!!\n");
 	neighbor* other;
 	int num;
-	printf("%d %d\n", e -> e1 -> v, e -> e2 -> v);
+	//printf("%d %d\n", e -> e1 -> v, e -> e2 -> v);
 	if(e -> e1 -> v == n){
 		other = e -> e2;
 	} else {
@@ -135,7 +135,7 @@ int deleteNode(graph * g, int n){ // return the remaining connecting node
 	num = other -> v;
     other = g -> nodeList[num].nghList;
 	if(other -> pre == NULL){
-        printf("other next: %d\n", other -> v);
+        //printf("other next: %d\n", other -> v);
 		g -> nodeList[num].nghList = other -> next;
 
         if(other -> next != NULL){
@@ -149,8 +149,9 @@ int deleteNode(graph * g, int n){ // return the remaining connecting node
 		}
 	}
 
-	free(g -> nodeList[n].nghList -> e);
-	g -> nodeList[n].nghList -> e = NULL;
+
+
+
     free(g -> nodeList[n].nghList);
 	g -> nodeList[n].nghList = NULL;
 
@@ -203,18 +204,21 @@ void reduceEdge(graph * g){
 	}
 	while(st < ed){
 		int cur = queue[st];
-		printf("%d %d %d\n", st, ed, cur);
+		//printf("%d %d %d\n", st, ed, cur);
 		st++;
 		int i = deleteNode(g, cur);
+		g -> nodeList[cur].d--;
 		g -> nodeList[i].d--;
-		printf("%d\n", i);
 		if(g -> nodeList[i].d == 1 && !g -> nodeList[i].isTerminal){
 			queue[ed] = i;
 			ed++;
 		}
 	}
     for (int i = 0; i < g -> E; i++){
-        if(g -> nodeList[g -> edges[i] -> v1] == NULL || g -> nodeList[g -> edges[i] -> v2] == NULL)
+        while(g -> edges[i] -> choose == -1){
+        	g -> edges[i] = g -> edges[--(g -> E)];
+        	//printf("%d %d\n", i, g -> E);
+        }
 
     }
     printf("total deleted: %d\n", st);
@@ -283,7 +287,7 @@ int testST(graph *g) {
 	while (!finish) {
 		finish = 1;
 		for (int i=1; i<g->E; i++) {
-            if(g->nodeList[g->edges[i]->v1] == NULL || g->nodeList[g->edges[i]->v2] == NULL) continue;
+            //if(g->nodeList[g->edges[i]->v1] == NULL || g->nodeList[g->edges[i]->v2] == NULL) continue;
 			if (g->nodeList[g->edges[i]->v1].choose + g->nodeList[g->edges[i]->v2].choose==1) {
 				g->edges[i]->choose = 1;
 				g->nodeList[g->edges[i]->v1].choose = 1;
