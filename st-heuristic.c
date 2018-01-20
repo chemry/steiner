@@ -93,8 +93,7 @@ void add(graph *g, int eIndex, int vertex1, int vertex2, int weight){
 	g -> edges[eIndex] -> e1 = addEdge(g, eIndex, vertex1, vertex2);
 	g -> edges[eIndex] -> e2 = addEdge(g, eIndex, vertex2, vertex1);
 
-	/*
-	g -> nodeList[vertex1].d ++;
+	/*g -> nodeList[vertex1].d ++;
 	ngh = (neighbor *)malloc(sizeof(neighbor));
 	ngh -> v = vertex2;
 	ngh -> e = g -> edges[eIndex];
@@ -119,43 +118,58 @@ void add(graph *g, int eIndex, int vertex1, int vertex2, int weight){
 	}*/
 }
 
-int deleteNode(graph * g, int n){ // return the remaining connecting node
+
+// delete the specify node and all the edges connected with this node. (also will delete the specified node in the adjacency list)
+
+void deleteNode(graph * g, int n){
 	neighbor* ngh = g -> nodeList[n].nghList;
-	g -> nodeList[n].nghList -> e -> choose = -1;
+	//edge* e = ngh -> e;
+
+	//printf("\n%d- ", n);
+	while(ngh != NULL){
+		int num = ngh -> v;
+		edge* e = ngh -> e;
+		e -> choose = -1;
+		//printf("%d e1:%d e2:%d\n", num, e -> e1 -> v, e -> e2 -> v);
+		neighbor* other = e -> e1;
+		if(e -> e2 -> v == n)
+			other = e -> e2;
+		if(other -> pre == NULL){
+	        //printf("other next: %d\n", other -> v);
+			g -> nodeList[num].nghList = other -> next;
+
+			if(other -> next != NULL){
+				other -> next -> pre = other -> pre;
+			}
+
+		} else {
+			other -> pre -> next = other -> next;
+			if(other -> next != NULL){
+				other -> next -> pre = other -> pre;
+			}
+		}
+		
+		ngh = ngh -> next;
+	}
+
 	g -> nodeList[n].choose = -1;
-	edge* e = ngh -> e;
-	neighbor* other;
-	int num;
-	//printf("%d %d\n", e -> e1 -> v, e -> e2 -> v);
-	if(e -> e1 -> v == n){
-		other = e -> e2;
-	} else {
-		other = e -> e1;
-	}
-	num = other -> v;
-    other = g -> nodeList[num].nghList;
-	if(other -> pre == NULL){
-        //printf("other next: %d\n", other -> v);
-		g -> nodeList[num].nghList = other -> next;
-
-        if(other -> next != NULL){
-			other -> next -> pre = other -> pre;
-		}
-
-	} else {
-		other -> pre -> next = other -> next;
-		if(other -> next != NULL){
-			other -> next -> pre = other -> pre;
-		}
-	}
-
 
 
 
     free(g -> nodeList[n].nghList);
 	g -> nodeList[n].nghList = NULL;
 
-	return num;
+	for (int i = 0; i < g -> E; i++){
+        while(g -> edges[i] -> choose == -1){
+        	if(i == g -> E - 1){
+        		g -> E --;
+        		break;
+        	}
+        	//printf("%d, %d, - e1:%d e2:%d\n", i, g -> E, g -> edges[i] -> e1 -> v, g -> edges[i] -> e2 -> v);
+        	g -> edges[i] = g -> edges[--(g -> E)];
+        }
+    }
+
 }
 
 
@@ -183,7 +197,6 @@ void report(graph *g){
 		printf("edge %d connecting vertex <%d, %d>\n", i, g -> edges[i] -> e1 -> v, g -> edges[i] -> e2 -> v);
 	}
 
-
 	printf("-----\n");
 	printf("The terminals are: ");
 	for(int i = 0; i < g -> T; i++){
@@ -203,10 +216,13 @@ void reduceEdge(graph * g){
 		}
 	}
 	while(st < ed){
-		int cur = queue[st];
-		//printf("%d %d %d\n", st, ed, cur);
+		int cur = queue[st], i;
+		//report(g);
 		st++;
-		int i = deleteNode(g, cur);
+		i = g -> nodeList[cur].nghList -> v;
+
+
+		deleteNode(g, cur);
 		g -> nodeList[cur].d--;
 		g -> nodeList[i].d--;
 		if(g -> nodeList[i].d == 1 && !g -> nodeList[i].isTerminal){
@@ -214,13 +230,7 @@ void reduceEdge(graph * g){
 			ed++;
 		}
 	}
-    for (int i = 0; i < g -> E; i++){
-        while(g -> edges[i] -> choose == -1){
-        	g -> edges[i] = g -> edges[--(g -> E)];
-        	//printf("%d %d\n", i, g -> E);
-        }
 
-    }
     printf("total deleted: %d\n", st);
 }
 
@@ -261,6 +271,8 @@ void readInput(graph *g){
 	}
 
 	reduceEdge(g);
+
+
 }
 
 void outputResult(graph *g) {
@@ -300,11 +312,16 @@ int testST(graph *g) {
 	outputResult(g);
 }
 
+void testDelete(graph * g){
+	deleteNode(g, 2);
+}
 
 int main(){
 	graph *g = (graph *)malloc(sizeof(graph));
 	readInput(g);
 	report(g);
 	testST(g);
+	testDelete(g);
+	report(g);
 	return 0;
 }
